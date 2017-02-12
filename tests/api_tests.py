@@ -53,7 +53,34 @@ class TestAPI(unittest.TestCase):
 
         postB = data[1]
         self.assertEqual(postB["title"], "Example Post B")
-        self.assertEqual(postB["body"], "Still a test")                
+        self.assertEqual(postB["body"], "Still a test")
+
+    def test_get_post(self):
+        """ Getting a single post from a populated database """
+        postA = models.Post(title="Example Post A", body="Just a test")
+        postB = models.Post(title="Example Post B", body="Still a test")
+
+        session.add_all([postA, postB])
+        session.commit()
+
+        response = self.client.get("/api/posts/{}".format(postB.id))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, "application/json")
+
+        post = json.loads(response.data.decode("ascii"))
+        self.assertEqual(post["title"], "Example Post B")
+        self.assertEqual(post["body"], "Still a test")
+
+    def test_get_non_existent_post(self):
+        """ Getting a single post which doesn't exist """
+        response = self.client.get("/api/posts/1")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.mimetype, "application/json")
+
+        data = json.loads(response.data.decode("ascii"))
+        self.assertEqual(data["message"], "Could not find post with id 1")
 
     def tearDown(self):
         """ Test teardown """
