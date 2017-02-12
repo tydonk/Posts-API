@@ -9,6 +9,7 @@ from posts import app
 from .database import session
 
 @app.route("/api/posts", methods=["GET"])
+@decorators.accept("application/json")
 def posts_get():
     """ Get a list of posts """
     # Get the posts from the database
@@ -18,7 +19,8 @@ def posts_get():
     data = json.dumps([post.as_dictionary() for post in posts])
     return Response(data, 200, mimetype="application/json")
 
-@app.route("/api/posts/<int:id>", methods=["GET", "PUT", "POST"])
+@app.route("/api/posts/<int:id>", methods=["GET", "PUT", "DELETE"])
+@decorators.accept("application/json")
 def post_get(id):
     """ Single post endpoint """
     # Get the post from the database
@@ -31,6 +33,17 @@ def post_get(id):
         data = json.dumps({"message": message})
         return Response(data, 404, mimetype="application/json")
 
-    # Return the post as JSON
-    data = json.dumps(post.as_dictionary())
-    return Response(data, 200, mimetype="application/json")
+    # Handle GET request
+    if request.method == "GET":
+        # Return the post as JSON
+        data = json.dumps(post.as_dictionary())
+        return Response(data, 200, mimetype="application/json")
+
+    # Handle DELETE request
+    elif request.method == "DELETE":
+        session.delete(post)
+        session.commit()
+        
+        message = "Deleted post {}".format(id)
+        data = json.dumps({"message": message})
+        return Response(data, 200, mimetype="application/json")
